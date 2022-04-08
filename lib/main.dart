@@ -51,48 +51,55 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-
+  late Socket socket;
   Future<void> _initClient() async {
     // connect to the socket server
-      final socket = await Socket.connect('127.0.0.1', 18910);
-      print(
-          'Connected to Server: ${socket.remoteAddress.address}:${socket.remotePort}');
+     socket = await Socket.connect('127.0.0.1', 18910);
+    print(
+        'Connected to Server: ${socket.remoteAddress.address}:${socket.remotePort}');
 
-      // listen for responses from the server
-      socket.listen(
-        // handle data from the server
-        (Uint8List data) {
-          final serverResponse = String.fromCharCodes(data);
-          print('Server: $serverResponse');
-        },
+    // listen for responses from the server
+    socket.listen(
+      // handle data from the server
+      (Uint8List data) {
+        final serverResponse = String.fromCharCodes(data);
+        print('Server: $serverResponse');
+      },
 
-        // handle errors
-        onError: (_) {
-          print('Connection Error: $_');
-          socket.destroy();
-        },
+      // handle errors
+      onError: (_) async{
+        print('Connection Error: $_');
+        socket.destroy();
+        await Future.delayed(Duration(seconds: 5));
+        _initClient();
+      },
 
-        // handle server ending connection
-        onDone: () {
-          print('Server left.');
-          socket.destroy();
-        },
-      );
-      // send some messages to the server
-  await sendMessage(socket, 'Knock, knock.');
-  await sendMessage(socket, 'client');
-  await sendMessage(socket, 'client');
-  await sendMessage(socket, 'OK, it is enough Mr. server. Stop asking who hehe');
+      // handle server ending connection
+      onDone: () async{
+        print('Server left.');
+        socket.destroy();
+        await Future.delayed(Duration(seconds: 5));
+        _initClient();
+      },
+    );
+    // send some messages to the server
+   /*  await sendMessage(socket, 'Knock, knock.');
+    await sendMessage(socket, 'client');
+    await sendMessage(socket, 'client');
+    await sendMessage(
+        socket, 'OK, it is enough Mr. server. Stop asking who hehe'); */
   }
-  Future<void> sendMessage(Socket socket, String message) async {
-  print('Client: $message');
-  socket.write(message);
-  await Future.delayed(Duration(seconds: 2));
-}
 
-void initState() {
-  _initClient();
-}
+  Future<void> sendMessage(Socket socket, String message) async {
+    print('Client: $message');
+    socket.write(message);
+    
+  }
+
+  void initState() {
+    _initClient();
+  }
+
   int _counter = 0;
 
   void _incrementCounter() {
@@ -102,7 +109,9 @@ void initState() {
       // so that the display can reflect the updated values. If we changed
       // _counter without calling setState(), then the build method would not be
       // called again, and so nothing would appear to happen.
+      
       _counter++;
+      sendMessage(socket, '$_counter');
     });
   }
 
@@ -158,5 +167,3 @@ void initState() {
     );
   }
 }
-
-
