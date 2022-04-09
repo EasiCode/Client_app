@@ -1,7 +1,5 @@
-import 'dart:io';
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
+import 'package:client_app/client.dart';
 
 void main() {
   runApp(const MyApp());
@@ -51,65 +49,16 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  late Socket socket;
-  Future<void> _initClient() async {
-    try {
-      // connect to the socket server
-      socket = await Socket.connect('127.0.0.1', 18910);
-    } on SocketException {
-      await Future.delayed(Duration(seconds: 2));
-      _initClient();
-      return;
-    }
-
-      print(
-          'Connected to Server: ${socket.remoteAddress.address}:${socket.remotePort}');
-
-      // listen for responses from the server
-      socket.listen(
-        // handle data from the server
-        (Uint8List data) {
-          final serverResponse = String.fromCharCodes(data);
-          final nom1 = int.parse(serverResponse);
-          setState(() {
-            _counter = nom1;
-          });
-          print('Server: $nom1');
-        },
-
-        // handle errors
-        onError: (_) async {
-          print('Connection Error: $_');
-          socket.destroy();
-          await Future.delayed(Duration(seconds: 5));
-          _initClient();
-        },
-
-        // handle server ending connection
-        onDone: () async {
-          print('Server left.');
-          socket.destroy();
-          await Future.delayed(Duration(seconds: 5));
-          _initClient();
-        },
-      );
-     
-    
-    // send some messages to the server
-    /*  await sendMessage(socket, 'Knock, knock.');
-    await sendMessage(socket, 'client');
-    await sendMessage(socket, 'client');
-    await sendMessage(
-        socket, 'OK, it is enough Mr. server. Stop asking who hehe'); */
-  }
-
-  Future<void> sendMessage(Socket socket, String message) async {
-    print('Client: $message');
-    socket.write(message);
-  }
-
+  final client = Client();
   void initState() {
-    _initClient();
+    //initClient();
+    client.receiveData.listen((serverResponse) {
+      final nom1 = int.parse(serverResponse);
+      //print('hghh: $nom1');
+      setState(() {
+        _counter = nom1;
+      });
+    });
   }
 
   int _counter = 0;
@@ -123,7 +72,7 @@ class _MyHomePageState extends State<MyHomePage> {
       // called again, and so nothing would appear to happen.
 
       _counter++;
-      sendMessage(socket, '$_counter');
+      client.sendMessage('$_counter');
     });
   }
 
@@ -179,3 +128,5 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 }
+
+class clientClass {}
