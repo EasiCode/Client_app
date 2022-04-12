@@ -23,12 +23,9 @@ class ServiceListener {
 /// Provider model that allows to handle Bonsoir discoveries.
 class BonsoirDiscoveryModel extends ChangeNotifier {
   /// Creates a new Bonsoir discovery model instance.
-  BonsoirDiscoveryModel() {
-    start();
-  }
 
   /// The current Bonsoir discovery object instance.
-   BonsoirDiscovery? _bonsoirDiscovery;
+  BonsoirDiscovery? _bonsoirDiscovery;
 
   /// Contains all discovered (and resolved) services.
   final List<ResolvedBonsoirService> _resolvedServices = [];
@@ -40,18 +37,6 @@ class BonsoirDiscoveryModel extends ChangeNotifier {
   List<ResolvedBonsoirService> get discoveredServices =>
       List.of(_resolvedServices.toSet());
 
-  /// Starts the Bonsoir discovery.
-  Future<void> start() async {
-    if ((_bonsoirDiscovery == null) || _bonsoirDiscovery!.isStopped) {
-      _bonsoirDiscovery =
-          BonsoirDiscovery(type: (await AppService.getService())!.type);
-      await _bonsoirDiscovery!.ready;
-     // await _bonsoirDiscovery!.start();
-    }
-    await _bonsoirDiscovery!.start();
-    _subscription = _bonsoirDiscovery!.eventStream?.listen(_onEventOccurred);
-  }
-
   /// Stops the Bonsoir discovery.
   void stop() {
     _subscription?.cancel();
@@ -59,30 +44,6 @@ class BonsoirDiscoveryModel extends ChangeNotifier {
     _bonsoirDiscovery?.stop();
   }
 
-  /// Triggered when a Bonsoir discovery event occurred.
-  void _onEventOccurred(BonsoirDiscoveryEvent event) async {
-    if (event.service == null || !event.isServiceResolved) {
-      return;
-    }
-    if (event.type == BonsoirDiscoveryEventType.DISCOVERY_SERVICE_RESOLVED &&
-        event is ResolvedBonsoirService) {
-      _resolvedServices.add(event.service! as ResolvedBonsoirService);
-
-      print(event.service!.port);
-      print((event.service as ResolvedBonsoirService).ip);
-      print("This is the value of... ${event.service}");
-      notifyListeners();
-    }
-   
-    else if (event.type == BonsoirDiscoveryEventType.DISCOVERY_SERVICE_LOST) {
-      _resolvedServices.remove(event.service);
-      notifyListeners();
-    }
-  }
-
   @override
-  void dispose() {
-    stop();
-    super.dispose();
-  }
+  void dispose() {}
 }

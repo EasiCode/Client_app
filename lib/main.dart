@@ -1,3 +1,6 @@
+import 'dart:developer';
+
+import 'package:bonsoir/bonsoir.dart';
 import 'package:client_app/service_listener.dart';
 import 'package:flutter/material.dart';
 import 'package:client_app/client.dart';
@@ -49,27 +52,60 @@ class MyHomePage extends StatefulWidget {
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
+typedef Callback = Function(String ip, int port);
+
 class _MyHomePageState extends State<MyHomePage> {
   //final client = Client();
-  late Client client;
+  late Client _client;
+  // ...........................................................................
+  @override
   void initState() {
-    _initDiscovery();
-    client = Client();
+    super.initState();
+    _initDiscovery((ip, port) {
+      _initClient(ip, port);
+    });
+  }
 
-    client.receiveData.listen((serverResponse) {
+  // ...........................................................................
+  _initDiscovery(Callback callback) async {
+    // This is the type of service we're looking for :
+    String type = '_wonderful-service._tcp';
+
+    // Once defined, we can start the discovery :
+    BonsoirDiscovery discovery = BonsoirDiscovery(type: type);
+    await discovery.ready;
+    await discovery.start();
+
+    // If you want to listen to the discovery :
+    discovery.eventStream?.listen((event) {
+      if (event.type == BonsoirDiscoveryEventType.DISCOVERY_SERVICE_RESOLVED) {
+        final service = (event.service as ResolvedBonsoirService);
+        final ip = service.ip;
+        final port = service.port;
+        if (ip != null) {
+          callback(ip, port);
+        }
+      } else if (event.type ==
+          BonsoirDiscoveryEventType.DISCOVERY_SERVICE_LOST) {
+        debugger();
+      }
+    });
+  }
+
+  // ...........................................................................
+  int _counter = 0;
+
+  // ...........................................................................
+  _initClient(String ip, int port) {
+    _client = Client(ip, port);
+
+    _client.receiveData.listen((serverResponse) {
       final nom1 = int.parse(serverResponse);
       //print('hghh: $nom1');
       setState(() {
         _counter = nom1;
       });
     });
-  }
-
-  int _counter = 0;
-
-  _initDiscovery () {
-    final discoveryModel = BonsoirDiscoveryModel();
-    discoveryModel.start();
   }
 
   void _incrementCounter() {
@@ -81,7 +117,7 @@ class _MyHomePageState extends State<MyHomePage> {
       // called again, and so nothing would appear to happen.
 
       _counter++;
-      client.sendMessage('$_counter');
+      _client.sendMessage('$_counter');
     });
   }
 

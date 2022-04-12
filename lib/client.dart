@@ -4,11 +4,14 @@ import 'dart:io';
 import 'dart:typed_data';
 
 class Client {
-  Client() {
+  Client(this.ip, this.port) {
     _receiveData = StreamController<String>.broadcast();
     receiveData = _receiveData.stream;
     init();
   }
+
+  final String ip;
+  final int port;
   late StreamController<String> _receiveData;
   late Stream<String> receiveData;
 
@@ -16,7 +19,7 @@ class Client {
   Future<void> init() async {
     try {
       // connect to the socket server
-      _socket = await Socket.connect('127.0.0.1', 18910);
+      _socket = await Socket.connect(ip, port);
     } on SocketException {
       await Future.delayed(Duration(seconds: 2));
       init();
