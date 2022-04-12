@@ -1,3 +1,4 @@
+import 'package:client_app/service_listener.dart';
 import 'package:flutter/material.dart';
 import 'package:client_app/client.dart';
 
@@ -49,9 +50,12 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final client = Client();
+  //final client = Client();
+  late Client client;
   void initState() {
-    //initClient();
+    _initDiscovery();
+    client = Client();
+
     client.receiveData.listen((serverResponse) {
       final nom1 = int.parse(serverResponse);
       //print('hghh: $nom1');
@@ -62,6 +66,11 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   int _counter = 0;
+
+  _initDiscovery () {
+    final discoveryModel = BonsoirDiscoveryModel();
+    discoveryModel.start();
+  }
 
   void _incrementCounter() {
     setState(() {
