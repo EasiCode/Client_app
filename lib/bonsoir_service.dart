@@ -14,7 +14,7 @@ class AppService {
   //static String ip = "127.0.0.1";
 
   /// The cached service.
-  static  BonsoirService? _service;
+  static BonsoirService? _service;
 
   /// Returns (and create if needed) the app Bonsoir service.
   static Future<BonsoirService?> getService() async {

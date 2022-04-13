@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'dart:async';
 import 'dart:io';
 
@@ -21,7 +23,7 @@ class Client {
       // connect to the socket server
       _socket = await Socket.connect(ip, port);
     } on SocketException {
-      await Future.delayed(Duration(seconds: 2));
+      await Future.delayed(const Duration(seconds: 2));
       init();
       return;
     }
@@ -43,7 +45,7 @@ class Client {
       onError: (_) async {
         print('Connection Error: $_');
         _socket.destroy();
-        await Future.delayed(Duration(seconds: 5));
+        await Future.delayed(const Duration(seconds: 5));
         init();
       },
 
@@ -51,25 +53,19 @@ class Client {
       onDone: () async {
         print('Server left.');
         _socket.destroy();
-        await Future.delayed(Duration(seconds: 5));
+        await Future.delayed(const Duration(seconds: 5));
         init();
       },
     );
-
-    // send some messages to the server
-    /*  await sendMessage(socket, 'Knock, knock.');
-    await sendMessage(socket, 'client');
-    await sendMessage(socket, 'client');
-    await sendMessage(
-        socket, 'OK, it is enough Mr. server. Stop asking who hehe'); */
   }
 
+  //handling data transfer to server
   Future<void> sendMessage(String message) async {
     print('Client: $message');
     _socket.write(message);
   }
 
-  void initState() {
+  /* void initState() {
     init();
-  }
+  } */
 }
