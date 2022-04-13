@@ -1,6 +1,7 @@
 import 'dart:developer';
 
 import 'package:bonsoir/bonsoir.dart';
+import 'package:client_app/measurement.dart';
 //import 'package:client_app/service_listener.dart';
 import 'package:flutter/material.dart';
 import 'package:client_app/client.dart';
@@ -39,12 +40,18 @@ typedef Callback = Function(String ip, int port);
 class _MyHomePageState extends State<MyHomePage> {
   //final client = Client();
   late Client _client;
+  late Measurement _measurement;
   // ...........................................................................
   @override
   void initState() {
     super.initState();
-    _initDiscovery((ip, port) {
-      _initClient(ip, port);
+    _initDiscovery((ip, port) async {
+      await _initClient(ip, port);
+      _measurement = Measurement(
+        sendData: (data) {
+          return _client.sendBytes(data.asByteData());
+        },
+      );
     });
   }
 
@@ -78,8 +85,9 @@ class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
 
   // ...........................................................................
-  _initClient(String ip, int port) {
+  _initClient(String ip, int port) async {
     _client = Client(ip, port);
+    await _client.init();
 
     _client.receiveData.listen((serverResponse) {
       final nom1 = int.parse(serverResponse);
@@ -90,10 +98,12 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _incrementCounter() {
+    _measurement.run();
+
     setState(() {
       _counter++;
       //send data to client
-      _client.sendMessage('$_counter');
+      // _client.sendMessage('$_counter');
     });
   }
 

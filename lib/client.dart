@@ -9,7 +9,6 @@ class Client {
   Client(this.ip, this.port) {
     _receiveData = StreamController<String>.broadcast();
     receiveData = _receiveData.stream;
-    init();
   }
 
   final String ip;
@@ -63,6 +62,12 @@ class Client {
   Future<void> sendMessage(String message) async {
     print('Client: $message');
     _socket.write(message);
+    await _socket.flush();
+  }
+
+  Future<void> sendBytes(ByteData byteData) async {
+    _socket.add(byteData.buffer.asUint8List());
+    await _socket.flush();
   }
 
   /* void initState() {
