@@ -98,6 +98,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _incrementCounter() {
+    
     _measurement.run();
 
     setState(() {

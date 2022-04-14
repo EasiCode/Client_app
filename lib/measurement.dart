@@ -9,7 +9,7 @@ class Measurement {
   Future<void> Function(ByteBuffer) sendData;
 
   // ...........................................................................
-  final maxNumMeasurements = 10;
+  final maxNumMeasurements = 100;
 
   // ...........................................................................
   static const oneByte = 1;
@@ -17,7 +17,7 @@ class Measurement {
   static const oneMByte = oneKByte * oneKByte;
   static const tenMBytes = oneMByte * 10;
   static const fiftyMbytes = tenMBytes * 5;
-  final packageSizes = [oneByte, oneKByte, oneMByte];
+  final packageSizes = [oneByte, oneKByte, oneMByte, tenMBytes, fiftyMbytes];
   // final packageSizes = [tenMBytes];
 
   // ...........................................................................
@@ -89,18 +89,21 @@ class Measurement {
   // ...........................................................................
   _exportMeasuredResults() {
     var csvContent = '';
-    for (final key in _measurementResults.keys) {
-      //
-      csvContent += '$key';
-      csvContent += ';';
-      csvContent += 'y';
-      csvContent += '\n';
+    //var time = _stopWatch.elapsed.inMicroseconds;
+   // print("time: $time");
+    for (var i = 0; i < maxNumMeasurements; i++) {
+      for (var key in _measurementResults.keys) {
+        csvContent += '$key';
+        csvContent += ';';
+        csvContent += '${i + 1}';
+        csvContent += '\n';
+      }
     }
 
-    var myFile = File('/tmp/measurement_result.csv');
+    var myFile = File('/Users/ajibade/Desktop/measurement_result.csv');
     if (myFile.existsSync()) {
       myFile.deleteSync();
-      myFile = File('/tmp/measurement_result.csv');
+      myFile = File('/Users/ajibade/Desktop/measurement_result.csv');
     }
     myFile.writeAsStringSync(csvContent);
   }
