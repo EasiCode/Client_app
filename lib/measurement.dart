@@ -9,7 +9,7 @@ class Measurement {
   Future<void> Function(ByteBuffer) sendData;
 
   // ...........................................................................
-  final maxNumMeasurements = 100;
+  final maxNumMeasurements = 10;
 
   // ...........................................................................
   static const oneByte = 1;
@@ -18,8 +18,8 @@ class Measurement {
   static const tenMBytes = oneMByte * 10;
   static const fiftyMbytes = tenMBytes * 5;
   final packageSizes = [oneByte, oneKByte, oneMByte, tenMBytes, fiftyMbytes];
-  // final packageSizes = [tenMBytes];
-
+  //final packageSizes = [oneByte, oneMByte, oneKByte];
+  
   // ...........................................................................
   void run() async {
     for (final packageSize in packageSizes) {
@@ -88,17 +88,36 @@ class Measurement {
 
   // ...........................................................................
   _exportMeasuredResults() {
-    var csvContent = '';
-    //var time = _stopWatch.elapsed.inMicroseconds;
-   // print("time: $time");
-    for (var i = 0; i < maxNumMeasurements; i++) {
-      for (var key in _measurementResults.keys) {
-        csvContent += '$key';
-        csvContent += ';';
-        csvContent += '${i + 1}';
-        csvContent += '\n';
-      }
-    }
+    var csvContent = "";
+
+    // create a table of 3 rows i.e
+    //   serial number 
+    //   Byte Size 
+    //   and elapsed times respectively.
+
+    // for each serial number,
+    //   iterate the measurement results.
+    //   i.e
+    //   iterate each byte size of the measurement results
+    //   get the measurement array for each byte size
+    //   get the measurement out of the array
+    // get the serial number for each byte size,
+    //
+      
+    //   iterate each byte size of the measurement results
+    _measurementResults.forEach((byteSize, elapsedTimes) {
+      // get the measurement array for each byte size and times for each byte size
+      int size = byteSize;
+      List<int> times = elapsedTimes;
+
+      // get the serial number for each byte size,
+      dynamic num = packageSizes.indexOf(byteSize);
+      dynamic number = num + 1;
+
+      //add elements into a container
+      csvContent += '$number,$size, $times\n';
+      //csvContent.add('$number, $size, $times\n');
+    });
 
     var myFile = File('/Users/ajibade/Desktop/measurement_result.csv');
     if (myFile.existsSync()) {
