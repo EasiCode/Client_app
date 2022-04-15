@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
+import 'package:csv/csv.dart';
 
 class Measurement {
   Measurement({required this.sendData});
@@ -90,6 +91,13 @@ class Measurement {
   _exportMeasuredResults() {
     var csvContent = "";
 
+    csvContent += "Serial";
+    csvContent += ",";
+    csvContent += "Byte Size";
+    csvContent += ",";
+    csvContent += "Latency($maxNumMeasurements)";
+    csvContent += "\n";
+
     // create a table of 3 rows i.e
     //   serial number
     //   Byte Size
@@ -114,7 +122,8 @@ class Measurement {
       //dynamic number = num + 1;
 
       //add elements into a container
-      csvContent += '$num,$size, ${times.toString().replaceAll('[', '').replaceAll(']', '')}\n';
+      csvContent +=
+          '$num,$size, ${times.toString().replaceAll('[', '').replaceAll(']', '')}\n';
       //csvContent.add('$number, $size, $times\n');
     });
 
