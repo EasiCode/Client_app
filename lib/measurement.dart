@@ -19,7 +19,7 @@ class Measurement {
   static const fiftyMbytes = tenMBytes * 5;
   final packageSizes = [oneByte, oneKByte, oneMByte, tenMBytes, fiftyMbytes];
   //final packageSizes = [oneByte, oneMByte, oneKByte];
-  
+
   // ...........................................................................
   void run() async {
     for (final packageSize in packageSizes) {
@@ -91,8 +91,8 @@ class Measurement {
     var csvContent = "";
 
     // create a table of 3 rows i.e
-    //   serial number 
-    //   Byte Size 
+    //   serial number
+    //   Byte Size
     //   and elapsed times respectively.
 
     // for each serial number,
@@ -103,19 +103,18 @@ class Measurement {
     //   get the measurement out of the array
     // get the serial number for each byte size,
     //
-      
+
     //   iterate each byte size of the measurement results
     _measurementResults.forEach((byteSize, elapsedTimes) {
       // get the measurement array for each byte size and times for each byte size
       int size = byteSize;
       List<int> times = elapsedTimes;
-
       // get the serial number for each byte size,
       dynamic num = packageSizes.indexOf(byteSize);
-      dynamic number = num + 1;
+      //dynamic number = num + 1;
 
       //add elements into a container
-      csvContent += '$number,$size, $times\n';
+      csvContent += '$num,$size, ${times.toString().replaceAll('[', '').replaceAll(']', '')}\n';
       //csvContent.add('$number, $size, $times\n');
     });
 
