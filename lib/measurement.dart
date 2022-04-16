@@ -83,7 +83,7 @@ class Measurement {
 
   // ...........................................................................
   void _writeMeasuredTimes(int packageSize) {
-    final elapsedTime = _stopWatch.elapsed.inMicroseconds;
+    final elapsedTime = _stopWatch.elapsed.inMilliseconds;
     _measurementResults[packageSize]!.add(elapsedTime);
   }
 
@@ -91,11 +91,15 @@ class Measurement {
   _exportMeasuredResults() {
     var csvContent = "";
 
-    csvContent += "Serial";
-    csvContent += ",";
+    // table header
     csvContent += "Byte Size";
     csvContent += ",";
-    csvContent += "Latency($maxNumMeasurements)";
+    for (var i = 0; i < maxNumMeasurements; i++) {
+      csvContent += "${i + 1}";
+      if (i < maxNumMeasurements - 1) {
+        csvContent += ",";
+      }
+    }
     csvContent += "\n";
 
     // create a table of 3 rows i.e
@@ -118,12 +122,12 @@ class Measurement {
       int size = byteSize;
       List<int> times = elapsedTimes;
       // get the serial number for each byte size,
-      dynamic num = packageSizes.indexOf(byteSize);
+      //dynamic num = packageSizes.indexOf(byteSize);
       //dynamic number = num + 1;
 
       //add elements into a container
       csvContent +=
-          '$num,$size, ${times.toString().replaceAll('[', '').replaceAll(']', '')}\n';
+          '$size, ${times.toString().replaceAll('[', '').replaceAll(']', '')}\n';
       //csvContent.add('$number, $size, $times\n');
     });
 
