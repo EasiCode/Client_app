@@ -27,17 +27,17 @@ class Client {
       return;
     }
 
-    print(
-        'Connected to Server: ${_socket.remoteAddress.address}:${_socket.remotePort}');
+    print('Connected to Server: ${_socket.remoteAddress.address}:${_socket.remotePort}');
 
     // listen for responses from the server
     _socket.listen(
       // handle data from the server
       (Uint8List data) {
         final serverResponse = String.fromCharCodes(data);
-        final nom1 = int.parse(serverResponse);
-        _receiveData.add(serverResponse);
-        print('Server: $nom1');
+        _checkForAcknowledgement(serverResponse);
+        // final nom1 = int.parse(serverResponse);
+        // _receiveData.add(serverResponse);
+        // print('Server: $nom1');
       },
 
       // handle errors
@@ -65,9 +65,29 @@ class Client {
     await _socket.flush();
   }
 
+  // ...........................................................................
   Future<void> sendBytes(ByteData byteData) async {
     _socket.add(byteData.buffer.asUint8List());
     await _socket.flush();
+    await _waitForAcknowledgementReceived();
+  }
+
+  // ...........................................................................
+  Completer? _acknowledgementCompleter;
+
+  // ...........................................................................
+  Future<void> _waitForAcknowledgementReceived() async {
+    _acknowledgementCompleter ??= Completer();
+    await _acknowledgementCompleter!.future;
+    _acknowledgementCompleter = null;
+  }
+
+  // ...........................................................................
+  _checkForAcknowledgement(String serverResponse) {
+    if (serverResponse == 'Acknowledgement') {
+      print('Acknowledgement received ...');
+      _acknowledgementCompleter?.complete();
+    }
   }
 
   /* void initState() {

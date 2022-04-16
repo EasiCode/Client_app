@@ -2,7 +2,6 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
-import 'package:csv/csv.dart';
 
 class Measurement {
   Measurement({required this.sendData});
@@ -13,12 +12,12 @@ class Measurement {
   final maxNumMeasurements = 10;
 
   // ...........................................................................
-  static const oneByte = 1;
+  static const twoBytes = 2;
   static const oneKByte = 1024;
   static const oneMByte = oneKByte * oneKByte;
   static const tenMBytes = oneMByte * 10;
   static const fiftyMbytes = tenMBytes * 5;
-  final packageSizes = [oneByte, oneKByte, oneMByte, tenMBytes, fiftyMbytes];
+  final packageSizes = [twoBytes, oneKByte, oneMByte, tenMBytes, fiftyMbytes];
   //final packageSizes = [oneByte, oneMByte, oneKByte];
 
   // ...........................................................................
@@ -27,7 +26,7 @@ class Measurement {
       _initResultArray(packageSize);
 
       if (kDebugMode) {
-        print('Measuring data for packageSize $packageSize');
+        print('Measuring data for packageSize $packageSize ...');
       }
 
       for (var iteration = 0; iteration < maxNumMeasurements; iteration++) {
@@ -37,6 +36,10 @@ class Measurement {
         _stopTimeMeasurement();
         _writeMeasuredTimes(packageSize);
       }
+    }
+
+    if (kDebugMode) {
+      print('Done.');
     }
 
     _exportMeasuredResults();
@@ -51,27 +54,41 @@ class Measurement {
 
   // ...........................................................................
   void _fillBuffer(ByteData byteData) {
+    assert(byteData.lengthInBytes >= 2);
+
+    // Fill buffer with ones
+    const one = 1;
     for (int offset = 0; offset < byteData.lengthInBytes; offset++) {
-      byteData.setUint8(offset, offset % 256);
+      byteData.setUint8(offset, one);
     }
+
+    // Write start byte at the beginning
+    const startByte = 0xFF;
+    const firstBytePosition = 0;
+    byteData.setUint8(firstBytePosition, startByte);
+
+    // Write stop byte at the end
+    const stopByte = 0xAA;
+    final lastBytePosion = byteData.lengthInBytes - 1;
+    byteData.setUint8(lastBytePosion, stopByte);
   }
 
   // ...........................................................................
   void _startTimeMeasurement() {
+    _stopWatch.reset();
     _stopWatch.start();
   }
 
   // ...........................................................................
   Future<void> _sendDataToServer() async {
     final buf = _buffer!.buffer;
-    if (kDebugMode) {
-      print('Sending buffer of length ${buf.lengthInBytes}');
-    }
+    print('Sending buffer of size ${buf.lengthInBytes}...');
     await sendData(buf);
   }
 
   // ...........................................................................
   void _stopTimeMeasurement() {
+    print('Stop time measurement ...');
     _stopWatch.stop();
   }
 
@@ -83,7 +100,7 @@ class Measurement {
 
   // ...........................................................................
   void _writeMeasuredTimes(int packageSize) {
-    final elapsedTime = _stopWatch.elapsed.inMilliseconds;
+    final elapsedTime = _stopWatch.elapsed.inMicroseconds;
     _measurementResults[packageSize]!.add(elapsedTime);
   }
 
@@ -126,15 +143,15 @@ class Measurement {
       //dynamic number = num + 1;
 
       //add elements into a container
-      csvContent +=
-          '$size, ${times.toString().replaceAll('[', '').replaceAll(']', '')}\n';
+      csvContent += '$size, ${times.toString().replaceAll('[', '').replaceAll(']', '')}\n';
       //csvContent.add('$number, $size, $times\n');
     });
 
-    var myFile = File('/Users/ajibade/Desktop/measurement_result.csv');
+    const path = '/Users/gatzsche/Desktop/measurement_result.csv';
+    var myFile = File(path);
     if (myFile.existsSync()) {
       myFile.deleteSync();
-      myFile = File('/Users/ajibade/Desktop/measurement_result.csv');
+      myFile = File(path);
     }
     myFile.writeAsStringSync(csvContent);
   }

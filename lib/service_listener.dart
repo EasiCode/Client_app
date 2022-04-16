@@ -5,8 +5,6 @@ import 'dart:async';
 import 'package:bonsoir/bonsoir.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-//import 'package:client_app/client.dart';
-import 'package:client_app/bonsoir_service.dart';
 
 class ServiceListener {
   bool isServiceResolved = true;
@@ -34,8 +32,7 @@ class BonsoirDiscoveryModel extends ChangeNotifier {
   StreamSubscription<BonsoirDiscoveryEvent>? _subscription;
 
   /// Returns all discovered (and resolved) services.
-  List<ResolvedBonsoirService> get discoveredServices =>
-      List.of(_resolvedServices.toSet());
+  List<ResolvedBonsoirService> get discoveredServices => List.of(_resolvedServices.toSet());
 
   /// Stops the Bonsoir discovery.
   void stop() {
@@ -43,7 +40,4 @@ class BonsoirDiscoveryModel extends ChangeNotifier {
     _subscription = null;
     _bonsoirDiscovery?.stop();
   }
-
-  @override
-  void dispose() {}
 }
