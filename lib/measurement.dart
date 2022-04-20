@@ -109,7 +109,7 @@ class Measurement {
     var csvContent = "";
 
     // table header
-    csvContent += "Byte Size";
+    /* csvContent += "Byte Size";
     csvContent += ",";
     for (var i = 0; i < maxNumMeasurements; i++) {
       csvContent += "${i + 1}";
@@ -117,12 +117,7 @@ class Measurement {
         csvContent += ",";
       }
     }
-    csvContent += "\n";
-
-    // create a table of 3 rows i.e
-    //   serial number
-    //   Byte Size
-    //   and elapsed times respectively.
+    csvContent += "\n"; */
 
     // for each serial number,
     //   iterate the measurement results.
@@ -130,24 +125,38 @@ class Measurement {
     //   iterate each byte size of the measurement results
     //   get the measurement array for each byte size
     //   get the measurement out of the array
-    // get the serial number for each byte size,
-    //
 
-    //   iterate each byte size of the measurement results
-    _measurementResults.forEach((byteSize, elapsedTimes) {
-      // get the measurement array for each byte size and times for each byte size
-      int size = byteSize;
-      List<int> times = elapsedTimes;
-      // get the serial number for each byte size,
-      //dynamic num = packageSizes.indexOf(byteSize);
-      //dynamic number = num + 1;
+    //create csv table
+    csvContent += "Byte Sizes";
+    csvContent += ",";
+    for (var packageSize in packageSizes) {
+      csvContent += "$packageSize";
+      csvContent += ",";
+    }
+    csvContent += "\n";
 
-      //add elements into a container
-      csvContent += '$size, ${times.toString().replaceAll('[', '').replaceAll(']', '')}\n';
-      //csvContent.add('$number, $size, $times\n');
-    });
+    for (var i = 0; i < maxNumMeasurements; i++) {
+      var numOfIterations = i + 1;
 
-    const path = '/Users/gatzsche/Desktop/measurement_result.csv';
+      csvContent += "$numOfIterations";
+      csvContent += ",";
+      print("Num: $numOfIterations");
+
+      for (var packetSize in packageSizes) {
+        var size = packetSize;
+        var times = _measurementResults[packetSize]![i];
+
+        csvContent += "$times";
+        if (i <= maxNumMeasurements) {
+          csvContent += ",";
+        }
+
+        print("$size: $times");
+      }
+      csvContent += "\n";
+    }
+
+    const path = '/Users/ajibade/Desktop/measurement_result.csv';
     var myFile = File(path);
     if (myFile.existsSync()) {
       myFile.deleteSync();
