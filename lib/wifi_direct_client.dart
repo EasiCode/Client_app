@@ -4,33 +4,48 @@ import 'dart:async';
 
 import 'package:flutter_nearby_connections/flutter_nearby_connections.dart';
 
-late NearbyService _nearbyService;
-List<Device> devices = [];
-List<Device> connectedDevices = [];
-
-enum DeviceType { advertiser, browser }
-
-late final DeviceType deviceType;
-
 // .............................................................................
 class NearbyClient {
   // ...........................................................................
   NearbyClient() {
-    init();
+    _init();
   }
 
   // ...........................................................................
-  void connectPeer(Device device) {
+  Future<void> sendMessage(String message) async {
+    await isConnected;
+    final firstDevice = _devices.first;
+    _nearbyService.sendMessage(firstDevice.deviceId, message);
+  }
+
+  // ...........................................................................
+  Future<void> get isConnected => _isConnected.future;
+
+  // ######################
+  // Private
+  // ######################
+
+  // ...........................................................................
+  late NearbyService _nearbyService;
+  final List<Device> _devices = [];
+  final _isConnected = Completer();
+
+  // ...........................................................................
+  void _deviceDidChange(Device device) async {
     if (device.state == SessionState.notConnected) {
-      _nearbyService.invitePeer(
+      await _nearbyService.invitePeer(
         deviceID: device.deviceId,
         deviceName: device.deviceName,
       );
+
+      if (!_isConnected.isCompleted) {
+        _isConnected.complete();
+      }
     }
   }
 
   // ...........................................................................
-  void init() {
+  void _init() {
     _nearbyService = NearbyService();
 
     _nearbyService.init(
@@ -50,8 +65,10 @@ class NearbyClient {
   // ...........................................................................
   void _listenAndConnect() {
     _nearbyService.stateChangedSubscription(callback: (devices) {
+      _devices.addAll(devices);
+
       for (final device in devices) {
-        connectPeer(device);
+        _deviceDidChange(device);
       }
     });
   }

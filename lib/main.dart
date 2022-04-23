@@ -41,12 +41,14 @@ typedef Callback = Function(String ip, int port);
 class _MyHomePageState extends State<MyHomePage> {
   //final client = Client();
   late Client _client;
-  final nearbyClient = NearbyClient();
+  final _nearbyClient = NearbyClient();
   late Measurement _measurement;
   // ...........................................................................
   @override
   void initState() {
     super.initState();
+
+    // Init Bonjour Discovery
     _initDiscovery((ip, port) async {
       await _initClient(ip, port);
       _measurement = Measurement(
@@ -100,13 +102,13 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _incrementCounter() {
-    
     _measurement.run();
 
     setState(() {
       _counter++;
       //send data to client
       // _client.sendMessage('$_counter');
+      _nearbyClient.sendMessage('Hello World!');
     });
   }
 
