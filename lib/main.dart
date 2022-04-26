@@ -1,6 +1,8 @@
 import 'dart:developer';
+import 'dart:io';
 
 import 'package:bonsoir/bonsoir.dart';
+import 'package:client_app/http_server.dart';
 import 'package:client_app/measurement.dart';
 import 'package:client_app/wifi_direct_client.dart';
 //import 'package:client_app/service_listener.dart';
@@ -41,12 +43,16 @@ typedef Callback = Function(String ip, int port);
 class _MyHomePageState extends State<MyHomePage> {
   //final client = Client();
   late Client _client;
+  late MeasurementHttpServer _measurementHttpServer;
   final _nearbyClient = NearbyClient();
-  late Measurement _measurement;
+  Measurement? _measurement;
   // ...........................................................................
   @override
   void initState() {
     super.initState();
+
+    _initIpAddresses();
+    _initMeasurementServer();
 
     // Init Bonjour Discovery
     _initDiscovery((ip, port) async {
@@ -57,6 +63,13 @@ class _MyHomePageState extends State<MyHomePage> {
         },
       );
     });
+  }
+
+  _initMeasurementServer() {
+    _measurementHttpServer = MeasurementHttpServer(
+      fileName: 'Measurment1.csv',
+      measurmentData: () => _measurement?.resultCsv ?? 'Measurement not yet started.',
+    );
   }
 
   // ...........................................................................
@@ -78,8 +91,7 @@ class _MyHomePageState extends State<MyHomePage> {
         if (ip != null) {
           callback(ip, port);
         }
-      } else if (event.type ==
-          BonsoirDiscoveryEventType.DISCOVERY_SERVICE_LOST) {
+      } else if (event.type == BonsoirDiscoveryEventType.DISCOVERY_SERVICE_LOST) {
         debugger();
       }
     });
@@ -102,13 +114,28 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _incrementCounter() {
-    _measurement.run();
+    _measurement?.run();
 
     setState(() {
       _counter++;
       //send data to client
       // _client.sendMessage('$_counter');
       _nearbyClient.sendMessage('Hello World!');
+    });
+  }
+
+  String _ipAddresses = '';
+  _initIpAddresses() async {
+    final networkInterface = await NetworkInterface.list();
+    setState(() {
+      _ipAddresses = '';
+      for (final interface in networkInterface) {
+        final addresses = interface.addresses.map(
+          (e) => e.address,
+        );
+        final addressesString = addresses.map(((e) => '$e:${MeasurementHttpServer.port}')).join(", ");
+        _ipAddresses += '$addressesString\n';
+      }
     });
   }
 
@@ -122,6 +149,7 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
+            Text(_ipAddresses),
             const Text(
               'You have pushed the button this many time(s):',
             ),
