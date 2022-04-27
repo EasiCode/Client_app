@@ -1,4 +1,14 @@
+import 'dart:developer';
+import 'dart:io';
+
+import 'package:bonsoir/bonsoir.dart';
+import 'package:client_app/http_server.dart';
+import 'package:client_app/measurement.dart';
+import 'package:client_app/wifi_direct_client.dart';
+//import 'package:client_app/service_listener.dart';
 import 'package:flutter/material.dart';
+import 'package:client_app/tcp_client.dart';
+import 'package:client_app/bonsoir_service.dart';
 
 void main() {
   runApp(const MyApp());
@@ -13,90 +23,135 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // Try running your application with "flutter run". You'll see the
-        // application has a blue toolbar. Then, without quitting the app, try
-        // changing the primarySwatch below to Colors.green and then invoke
-        // "hot reload" (press "r" in the console where you ran "flutter run",
-        // or simply save your changes to "hot reload" in a Flutter IDE).
-        // Notice that the counter didn't reset back to zero; the application
-        // is not restarted.
-        primarySwatch: Colors.blue,
+        primarySwatch: Colors.grey,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const MyHomePage(title: 'Bonjour Client'),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({Key? key, required this.title}) : super(key: key);
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
   final String title;
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
+typedef Callback = Function(String ip, int port);
+
 class _MyHomePageState extends State<MyHomePage> {
+  //final client = Client();
+  late Client _client;
+  late MeasurementHttpServer _measurementHttpServer;
+  final _nearbyClient = NearbyClient();
+  Measurement? _measurement;
+  // ...........................................................................
+  @override
+  void initState() {
+    super.initState();
+
+    _initIpAddresses();
+    _initMeasurementServer();
+
+    // Init Bonjour Discovery
+    _initDiscovery((ip, port) async {
+      await _initClient(ip, port);
+      _measurement = Measurement(
+        sendData: (data) {
+          return _client.sendBytes(data.asByteData());
+        },
+      );
+    });
+  }
+
+  _initMeasurementServer() {
+    _measurementHttpServer = MeasurementHttpServer(
+      fileName: 'Measurment1.csv',
+      measurmentData: () => _measurement?.resultCsv ?? 'Measurement not yet started.',
+    );
+  }
+
+  // ...........................................................................
+  _initDiscovery(Callback callback) async {
+    // This is the type of service we're looking for :
+    String type = AppService.type;
+
+    // Once defined, we can start the discovery :
+    BonsoirDiscovery discovery = BonsoirDiscovery(type: type);
+    await discovery.ready;
+    await discovery.start();
+
+    // If you want to listen to the discovery :
+    discovery.eventStream?.listen((event) {
+      if (event.type == BonsoirDiscoveryEventType.DISCOVERY_SERVICE_RESOLVED) {
+        final service = (event.service as ResolvedBonsoirService);
+        final ip = service.ip;
+        final port = service.port;
+        if (ip != null) {
+          callback(ip, port);
+        }
+      } else if (event.type == BonsoirDiscoveryEventType.DISCOVERY_SERVICE_LOST) {
+        debugger();
+      }
+    });
+  }
+
+  // ...........................................................................
   int _counter = 0;
 
+  // ...........................................................................
+  _initClient(String ip, int port) async {
+    _client = Client(ip, port);
+    await _client.init();
+
+    _client.receiveData.listen((serverResponse) {
+      final nom1 = int.parse(serverResponse);
+      setState(() {
+        _counter = nom1;
+      });
+    });
+  }
+
   void _incrementCounter() {
+    _measurement?.run();
+
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
       _counter++;
+      //send data to client
+      // _client.sendMessage('$_counter');
+      _nearbyClient.sendMessage('Hello World!');
+    });
+  }
+
+  String _ipAddresses = '';
+  _initIpAddresses() async {
+    final networkInterface = await NetworkInterface.list();
+    setState(() {
+      _ipAddresses = '';
+      for (final interface in networkInterface) {
+        final addresses = interface.addresses.map(
+          (e) => e.address,
+        );
+        final addressesString = addresses.map(((e) => '$e:${MeasurementHttpServer.port}')).join(", ");
+        _ipAddresses += '$addressesString\n';
+      }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
         title: Text(widget.title),
       ),
       body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
         child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Invoke "debug painting" (press "p" in the console, choose the
-          // "Toggle Debug Paint" action from the Flutter Inspector in Android
-          // Studio, or the "Toggle Debug Paint" command in Visual Studio Code)
-          // to see the wireframe for each widget.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
+            Text(_ipAddresses),
             const Text(
-              'You have pushed the button this many times:',
+              'You have pushed the button this many time(s):',
             ),
             Text(
               '$_counter',
@@ -109,9 +164,7 @@ class _MyHomePageState extends State<MyHomePage> {
         onPressed: _incrementCounter,
         tooltip: 'Increment',
         child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+      ),
     );
   }
 }
-
-
