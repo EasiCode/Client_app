@@ -9,6 +9,7 @@ import 'package:client_app/wifi_direct_client.dart';
 import 'package:flutter/material.dart';
 import 'package:client_app/tcp_client.dart';
 import 'package:client_app/bonsoir_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   runApp(const MyApp());
@@ -51,6 +52,7 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     super.initState();
 
+    _initSharedPreferences();
     _initIpAddresses();
     _initMeasurementServer();
 
@@ -65,11 +67,23 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
+  // ...........................................................................
+  SharedPreferences? _sharedPreferences;
+  _initSharedPreferences() async {
+    _sharedPreferences = await SharedPreferences.getInstance();
+  }
+
+  // ...........................................................................
   _initMeasurementServer() {
     _measurementHttpServer = MeasurementHttpServer(
-      fileName: 'Measurment1.csv',
-      measurmentData: () => _measurement?.resultCsv ?? 'Measurement not yet started.',
-    );
+        fileName: 'Measurment1.csv',
+        measurmentData: () {
+          final data = _measurement?.resultCsv ??
+              _sharedPreferences?.getString('measurements.csv') ??
+              'No measurments available';
+
+          return data.replaceAll('\n', '\\n');
+        });
   }
 
   // ...........................................................................

@@ -1,9 +1,9 @@
 // ignore_for_file: avoid_print
 
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class Measurement {
   Measurement({required this.sendData});
@@ -45,6 +45,11 @@ class Measurement {
     }
 
     _exportMeasuredResults();
+  }
+
+  // ...........................................................................
+  String? get resultCsv {
+    return _resultCsv;
   }
 
   // ...........................................................................
@@ -107,8 +112,11 @@ class Measurement {
   }
 
   // ...........................................................................
-  _exportMeasuredResults() {
-    var csvContent = "";
+  String? _resultCsv;
+
+  // ...........................................................................
+  _exportMeasuredResults() async {
+    String csv = "";
 
     // table header
     /* csvContent += "Byte Size";
@@ -129,42 +137,47 @@ class Measurement {
     //   get the measurement out of the array
 
     //create csv table
-    csvContent += "Byte Sizes";
-    csvContent += ",";
+    csv += "Byte Sizes";
+    csv += ",";
     for (var packageSize in packageSizes) {
-      csvContent += "$packageSize";
-      csvContent += ",";
+      csv += "$packageSize";
+      csv += ",";
     }
-    csvContent += "\n";
+    csv += "\n";
 
     for (var i = 0; i < maxNumMeasurements; i++) {
       var numOfIterations = i + 1;
 
-      csvContent += "$numOfIterations";
-      csvContent += ",";
+      csv += "$numOfIterations";
+      csv += ",";
       print("Num: $numOfIterations");
 
       for (var packetSize in packageSizes) {
         var size = packetSize;
         var times = _measurementResults[packetSize]![i];
 
-        csvContent += "$times";
+        csv += "$times";
         if (i <= maxNumMeasurements) {
-          csvContent += ",";
+          csv += ",";
         }
 
         print("$size: $times");
       }
-      csvContent += "\n";
+      csv += "\n";
     }
 
-    const path = '/Users/ajibade/Desktop/measurement_result.csv';
-    var myFile = File(path);
-    if (myFile.existsSync()) {
-      myFile.deleteSync();
-      myFile = File(path);
-    }
-    myFile.writeAsStringSync(csvContent);
+    final prefs = await SharedPreferences.getInstance();
+    prefs.setString('measurements.csv', csv);
+
+    _resultCsv = csv;
+
+    // const path = '/Users/ajibade/Desktop/measurement_result.csv';
+    // var myFile = File(path);
+    // if (myFile.existsSync()) {
+    //   myFile.deleteSync();
+    //   myFile = File(path);
+    // }
+    // myFile.writeAsStringSync(_resultCsv);
   }
 
   // ...........................................................................
