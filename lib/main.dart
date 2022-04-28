@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer';
 import 'dart:io';
 
@@ -46,7 +47,8 @@ class _MyHomePageState extends State<MyHomePage> {
   late Client _client;
   late MeasurementHttpServer _measurementHttpServer;
   final _nearbyClient = NearbyClient();
-  Measurement? _measurement;
+  Measurement? _tcpMeasurments;
+  Measurement? _nearbyMeasurments;
   // ...........................................................................
   @override
   void initState() {
@@ -55,16 +57,7 @@ class _MyHomePageState extends State<MyHomePage> {
     _initSharedPreferences();
     _initIpAddresses();
     _initMeasurementServer();
-
-    // Init Bonjour Discovery
-    _initDiscovery((ip, port) async {
-      await _initClient(ip, port);
-      _measurement = Measurement(
-        sendData: (data) {
-          return _client.sendBytes(data.asByteData());
-        },
-      );
-    });
+    _initTcpConnection();
   }
 
   // ...........................................................................
@@ -74,11 +67,25 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   // ...........................................................................
+  _initTcpConnection() {
+    // Init Bonjour Discovery
+    _initDiscovery((ip, port) async {
+      await _initClient(ip, port);
+      _tcpMeasurments = Measurement(
+        sendData: (data) {
+          return _client.sendBytes(data.asByteData());
+        },
+        log: log,
+      );
+    });
+  }
+
+  // ...........................................................................
   _initMeasurementServer() {
     _measurementHttpServer = MeasurementHttpServer(
         fileName: 'Measurment1.csv',
         measurmentData: () {
-          final data = _measurement?.resultCsv ??
+          final data = _tcpMeasurments?.resultCsv ??
               _sharedPreferences?.getString('measurements.csv') ??
               'No measurments available';
 
@@ -112,30 +119,14 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   // ...........................................................................
-  int _counter = 0;
+  final log = StreamController<String>.broadcast();
 
   // ...........................................................................
   _initClient(String ip, int port) async {
-    _client = Client(ip, port);
+    _client = Client(ip, port, log);
     await _client.init();
 
-    _client.receiveData.listen((serverResponse) {
-      final nom1 = int.parse(serverResponse);
-      setState(() {
-        _counter = nom1;
-      });
-    });
-  }
-
-  void _incrementCounter() {
-    _measurement?.run();
-
-    setState(() {
-      _counter++;
-      //send data to client
-      // _client.sendMessage('$_counter');
-      _nearbyClient.sendMessage('Hello World!');
-    });
+    _client.receiveData.listen((serverResponse) {});
   }
 
   String _ipAddresses = '';
@@ -153,6 +144,14 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
+  _startTcpMeasurements() {
+    _tcpMeasurments?.run();
+  }
+
+  _startNearbyMeasurements() {
+    _tcpMeasurments?.run();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -163,21 +162,35 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Text(_ipAddresses),
-            const Text(
-              'You have pushed the button this many time(s):',
+            const Spacer(
+              flex: 1,
             ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headline4,
+            TextButton(
+              child: const Text('Measure TCP'),
+              onPressed: () => _startTcpMeasurements(),
+            ),
+            TextButton(
+              child: const Text('Measure Nearby WIFY'),
+              onPressed: () => _startNearbyMeasurements(),
+            ),
+            const Spacer(
+              flex: 1,
+            ),
+            Text(_ipAddresses),
+            const Spacer(
+              flex: 1,
+            ),
+            StreamBuilder<String>(
+              stream: log.stream,
+              builder: (context, snapshot) {
+                return Text(snapshot.data ?? '');
+              },
+            ),
+            const Spacer(
+              flex: 1,
             ),
           ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
       ),
     );
   }

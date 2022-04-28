@@ -6,7 +6,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 class Client {
-  Client(this.ip, this.port) {
+  Client(this.ip, this.port, this.log) {
     _receiveData = StreamController<String>.broadcast();
     receiveData = _receiveData.stream;
   }
@@ -15,6 +15,7 @@ class Client {
   final int port;
   late StreamController<String> _receiveData;
   late Stream<String> receiveData;
+  final StreamController<String>? log;
 
   late Socket _socket;
   Future<void> init() async {
@@ -27,7 +28,7 @@ class Client {
       return;
     }
 
-    print('Connected to Server: ${_socket.remoteAddress.address}:${_socket.remotePort}');
+    log?.add('Connected to Server: ${_socket.remoteAddress.address}:${_socket.remotePort}');
 
     // listen for responses from the server
     _socket.listen(
@@ -42,7 +43,7 @@ class Client {
 
       // handle errors
       onError: (_) async {
-        print('Connection Error: $_');
+        log?.add('Connection Error: $_');
         _socket.destroy();
         await Future.delayed(const Duration(seconds: 5));
         init();
@@ -50,7 +51,7 @@ class Client {
 
       // handle server ending connection
       onDone: () async {
-        print('Server left.');
+        log?.add('Server left.');
         _socket.destroy();
         await Future.delayed(const Duration(seconds: 5));
         init();
@@ -60,7 +61,7 @@ class Client {
 
   //handling data transfer to server
   Future<void> sendMessage(String message) async {
-    print('Client: $message');
+    log?.add('Client: $message');
     _socket.write(message);
     await _socket.flush();
   }
@@ -85,7 +86,7 @@ class Client {
   // ...........................................................................
   _checkForAcknowledgement(String serverResponse) {
     if (serverResponse == 'Acknowledgement') {
-      print('Acknowledgement received ...');
+      log?.add('Acknowledgement received ...');
       _acknowledgementCompleter?.complete();
     }
   }

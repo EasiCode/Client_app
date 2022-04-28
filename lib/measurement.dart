@@ -1,17 +1,19 @@
 // ignore_for_file: avoid_print
 
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Measurement {
-  Measurement({required this.sendData});
+  Measurement({required this.sendData, this.log});
 
   Future<void> Function(ByteBuffer) sendData;
 
   // ...........................................................................
-  final maxNumMeasurements = 10;
+  final maxNumMeasurements = 30;
+  final StreamController<String>? log;
 
   // ...........................................................................
   static const twoBytes = 2;
@@ -28,7 +30,7 @@ class Measurement {
       _initResultArray(packageSize);
 
       if (kDebugMode) {
-        print('Measuring data for packageSize $packageSize ...');
+        log?.add('Measuring data for packageSize $packageSize ...');
       }
 
       for (var iteration = 0; iteration < maxNumMeasurements; iteration++) {
@@ -40,11 +42,9 @@ class Measurement {
       }
     }
 
-    if (kDebugMode) {
-      print('Done.');
-    }
-
+    log?.add('Exporting Measurement Results');
     _exportMeasuredResults();
+    log?.add('Done.');
   }
 
   // ...........................................................................
@@ -89,13 +89,13 @@ class Measurement {
   // ...........................................................................
   Future<void> _sendDataToServer() async {
     final buf = _buffer!.buffer;
-    print('Sending buffer of size ${buf.lengthInBytes}...');
+    log?.add('Sending buffer of size ${buf.lengthInBytes}...');
     await sendData(buf);
   }
 
   // ...........................................................................
   void _stopTimeMeasurement() {
-    print('Stop time measurement ...');
+    log?.add('Stop time measurement ...');
     _stopWatch.stop();
   }
 
@@ -150,7 +150,7 @@ class Measurement {
 
       csv += "$numOfIterations";
       csv += ",";
-      print("Num: $numOfIterations");
+      log?.add("Num: $numOfIterations");
 
       for (var packetSize in packageSizes) {
         var size = packetSize;
@@ -161,7 +161,7 @@ class Measurement {
           csv += ",";
         }
 
-        print("$size: $times");
+        log?.add("$size: $times");
       }
       csv += "\n";
     }
